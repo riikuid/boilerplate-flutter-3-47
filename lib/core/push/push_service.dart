@@ -20,6 +20,9 @@ abstract interface class PushService {
 
   /// User tapped a notification (from background or terminated).
   Stream<PushMessage> get onMessageOpened;
+
+  /// The provider rotated the device token; re-send it to the backend.
+  Stream<String> get onTokenRefresh;
 }
 
 class PushMessage {

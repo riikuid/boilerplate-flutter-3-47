@@ -21,4 +21,7 @@ class NoopPushService implements PushService {
 
   @override
   Stream<PushMessage> get onMessageOpened => const Stream.empty();
+
+  @override
+  Stream<String> get onTokenRefresh => const Stream.empty();
 }

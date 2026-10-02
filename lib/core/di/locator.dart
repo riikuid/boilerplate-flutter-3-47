@@ -4,10 +4,10 @@ import 'package:talker_flutter/talker_flutter.dart';
 
 import '../../features/auth/auth_di.dart';
 import '../../features/sample/sample_di.dart';
+import '../../integrations/firebase/firebase_di.dart';
+import '../../integrations/local_notifications/local_notifications_di.dart';
 import '../logging/app_logger.dart';
 import '../network/dio_builder.dart';
-import '../push/noop_push_service.dart';
-import '../push/push_service.dart';
 import '../session/session_events.dart';
 import '../session/session_storage.dart';
 
@@ -28,8 +28,11 @@ Future<void> setupLocator() async {
     () => buildDio(storage: sl(), events: sl(), talker: sl()),
   );
 
-  // Push: swap for `registerFirebase(sl)` from lib/integrations/firebase.
-  sl.registerLazySingleton<PushService>(NoopPushService.new);
+  // --- Integrations ----------------------------------------------------------
+  // Push is Firebase by default. Without Firebase (see tool/remove_firebase.sh)
+  // the line is:  sl.registerLazySingleton<PushService>(NoopPushService.new);
+  registerLocalNotifications(sl);
+  registerFirebase(sl);
 
   // --- Features --------------------------------------------------------------
   registerAuth(sl);

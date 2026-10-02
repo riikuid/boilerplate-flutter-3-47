@@ -4,6 +4,14 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+// firebase:start — google-services.json is gitignored; only apply the plugin
+// when the file is present so a fresh clone (or a project without Firebase)
+// still builds.
+if (file("google-services.json").exists()) {
+    apply(plugin = "com.google.gms.google-services")
+}
+// firebase:end
+
 android {
     namespace = "com.pentacrew.penta_crew"
     compileSdk = flutter.compileSdkVersion
