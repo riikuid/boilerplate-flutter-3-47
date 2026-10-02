@@ -9,14 +9,28 @@ import '../../core/push/push_service.dart';
 import '../local_notifications/local_notification_service.dart';
 import 'firebase_options.dart';
 
+/// Whether `firebase_options.dart` has been replaced by real
+/// `flutterfire configure` output.
+///
+/// This check must happen *before* `Firebase.initializeApp`: the iOS SDK
+/// validates the API key natively (39 chars, starts with `A`) and throws an
+/// `NSException` on mismatch, which kills the process and cannot be caught
+/// from Dart. Google API keys always have that shape, so it doubles as a
+/// cheap sanity check for a half-edited config.
+bool firebaseIsConfigured(FirebaseOptions options) {
+  final key = options.apiKey;
+  return !key.startsWith('REPLACE') && key.length == 39 && key.startsWith('A');
+}
+
 /// Runs in a separate isolate when a message arrives while the app is in the
 /// background or terminated. Keep it light: no `sl`, no UI. Data-only
 /// messages that need work (e.g. sync) go here.
 @pragma('vm:entry-point')
 Future<void> firebaseBackgroundHandler(RemoteMessage message) async {
   // Firebase must be initialised in this isolate too.
-  if (Firebase.apps.isEmpty) {
-    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  final options = DefaultFirebaseOptions.currentPlatform;
+  if (Firebase.apps.isEmpty && firebaseIsConfigured(options)) {
+    await Firebase.initializeApp(options: options);
   }
 }
 
@@ -37,6 +51,9 @@ class FirebasePushService implements PushService {
   final _onToken = StreamController<String>.broadcast();
   final _subs = <StreamSubscription<dynamic>>[];
   bool _initialized = false;
+  // False until Firebase.initializeApp succeeded; every FCM call is a no-op
+  // before that (placeholder options, or init failed at runtime).
+  bool _ready = false;
 
   FirebaseMessaging get _fcm => FirebaseMessaging.instance;
 
@@ -45,13 +62,23 @@ class FirebasePushService implements PushService {
     if (_initialized) return;
     _initialized = true;
 
-    if (Firebase.apps.isEmpty) {
-      await Firebase.initializeApp(
-        options: DefaultFirebaseOptions.currentPlatform,
-      );
-    }
-
+    // Local notifications work without Firebase, so they come up either way.
     await _local.init();
+
+    if (Firebase.apps.isEmpty) {
+      final options = DefaultFirebaseOptions.currentPlatform;
+      if (!firebaseIsConfigured(options)) {
+        _talker.warning(
+          'Firebase not configured (firebase_options.dart is the placeholder) '
+          '— push disabled. Run `flutterfire configure` or '
+          '`tool/remove_firebase.sh`.',
+        );
+        return;
+      }
+      await Firebase.initializeApp(options: options);
+    }
+    _ready = true;
+
     FirebaseMessaging.onBackgroundMessage(firebaseBackgroundHandler);
 
     if (defaultTargetPlatform == TargetPlatform.iOS) {
@@ -81,6 +108,7 @@ class FirebasePushService implements PushService {
 
   @override
   Future<bool> requestPermission() async {
+    if (!_ready) return false;
     try {
       final settings = await _fcm.requestPermission();
       final granted = switch (settings.authorizationStatus) {
@@ -100,6 +128,7 @@ class FirebasePushService implements PushService {
 
   @override
   Future<String?> getToken() async {
+    if (!_ready) return null;
     try {
       return await _fcm.getToken();
     } catch (e, st) {
@@ -110,6 +139,7 @@ class FirebasePushService implements PushService {
 
   @override
   Future<void> deleteToken() async {
+    if (!_ready) return;
     try {
       await _fcm.deleteToken();
     } catch (e, st) {

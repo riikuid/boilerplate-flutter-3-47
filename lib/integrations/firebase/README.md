@@ -16,8 +16,13 @@ integrations/
     └── local_notifications_di.dart
 ```
 
-Startup: `main.dart` calls `sl<PushService>().init()` inside a try/catch, so a
-missing native config logs an error and disables push instead of crashing.
+Startup: `FirebasePushService.init()` first checks `firebaseIsConfigured()` —
+while `firebase_options.dart` is still the placeholder it logs a warning and
+skips `Firebase.initializeApp` entirely (local notifications still start).
+This check cannot be replaced by a try/catch: the iOS SDK validates the API key
+natively and throws an `NSException`, which kills the process before Dart sees
+it. `main.dart` additionally wraps `init()` in a try/catch for runtime errors
+once Firebase *is* configured (e.g. a stale `GoogleService-Info.plist`).
 
 ## Enable
 

@@ -3,8 +3,11 @@
 //   dart pub global activate flutterfire_cli
 //   flutterfire configure --out=lib/integrations/firebase/firebase_options.dart
 //
-// The values below are fake so the project compiles; Firebase.initializeApp
-// will fail at runtime (and is caught in main.dart) until you run the command.
+// The values below are fake so the project compiles. FirebasePushService
+// detects them (see firebaseIsConfigured) and skips Firebase.initializeApp —
+// push stays off, local notifications still work — until you run the command.
+// Do NOT hand-edit real values in here: the iOS SDK aborts the process on an
+// API key that merely looks wrong.
 
 import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
 import 'package:flutter/foundation.dart'
