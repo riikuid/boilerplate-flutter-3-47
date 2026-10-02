@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../../../auth/presentation/cubit/auth_state.dart';
+import '../../../sample/sample_routes.dart';
 
 /// Landing page after login. Replace with the real shell (bottom nav, etc.).
 class HomeScreen extends StatelessWidget {
@@ -38,6 +40,15 @@ class HomeScreen extends StatelessWidget {
           if (user?.email != null) Text(user!.email!),
           const SizedBox(height: 24),
           // Feature entry points go here.
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.list_alt_outlined),
+              title: const Text('Sample'),
+              subtitle: const Text('Template fitur: list paginated + detail'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.push(SampleRoutes.list),
+            ),
+          ),
         ],
       ),
     );

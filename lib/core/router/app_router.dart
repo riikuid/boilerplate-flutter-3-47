@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../features/auth/auth_routes.dart';
 import '../../features/home/home_routes.dart';
+import '../../features/sample/sample_routes.dart';
 import '../config/env.dart';
 import '../di/locator.dart';
 import '../session/session_info.dart';
@@ -21,6 +22,7 @@ GoRouter buildAppRouter({required Listenable refreshListenable}) {
     routes: [
       ...authRoutes,
       ...homeRoutes,
+      ...sampleRoutes,
       // ...add each feature's routes here.
     ],
     errorBuilder: (context, state) => ErrorView(
